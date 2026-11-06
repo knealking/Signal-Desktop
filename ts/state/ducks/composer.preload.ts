@@ -100,6 +100,7 @@ import type {
 } from './conversations.preload.ts';
 import { longRunningTaskWrapper } from '../../util/longRunningTaskWrapper.dom.tsx';
 import { drop } from '../../util/drop.std.ts';
+import { scheduledMessagesService } from '../../services/scheduledMessages.preload.ts';
 import { strictAssert } from '../../util/assert.std.ts';
 import { makeQuote } from '../../util/makeQuote.preload.ts';
 import { sendEditedMessage as doSendEditedMessage } from '../../util/sendEditedMessage.preload.ts';
@@ -277,6 +278,7 @@ export const actions = {
   addPendingAttachment,
   cancelJoinRequest,
   endPoll,
+  cancelScheduledMessage,
   incrementSendCounter,
   onClearDraft,
   onClearAttachments,
@@ -289,6 +291,7 @@ export const actions = {
   replaceAttachments,
   resetComposer,
   saveDraftRecordingIfNeeded,
+  scheduleMessage,
   scrollToPinnedMessage,
   scrollToPollMessage,
   scrollToQuotedMessage,
@@ -332,6 +335,52 @@ function onClearDraft(conversationId: string): SyncStateThunk<NoopActionType> {
     });
 
     dispatch(onClearAttachments(conversation.id));
+  };
+}
+
+function scheduleMessage(
+  conversationId: string,
+  options: {
+    message: string;
+    bodyRanges: DraftBodyRanges;
+    sendAt: number;
+  }
+): AsyncStateThunk<IncrementSendActionType> {
+  return async dispatch => {
+    const conversation = window.ConversationController.get(conversationId);
+    if (!conversation) {
+      throw new Error('scheduleMessage: No conversation found');
+    }
+
+    const { message, bodyRanges, sendAt } = options;
+    if (message.trim().length === 0) {
+      return;
+    }
+
+    await scheduledMessagesService.schedule({
+      conversationId,
+      body: message,
+      bodyRanges,
+      sendAt,
+    });
+
+    // Clear the composer like a regular send would
+    debouncedSaveDraft.cancel();
+    conversation.set({
+      draft: '',
+      draftBodyRanges: [],
+      draftTimestamp: null,
+    });
+    await DataWriter.updateConversation(conversation.attributes);
+    resetLinkPreview(conversationId);
+    dispatch(incrementSendCounter(conversationId));
+  };
+}
+
+function cancelScheduledMessage(id: string): AsyncStateThunk<NoopActionType> {
+  return async dispatch => {
+    await scheduledMessagesService.cancel(id);
+    dispatch(noopAction('cancelScheduledMessage'));
   };
 }
 
