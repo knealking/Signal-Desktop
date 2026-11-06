@@ -80,6 +80,7 @@ import * as updater from '../ts/updater/index.main.ts';
 import { updateDefaultSession } from './updateDefaultSession.main.ts';
 import { sanitize as sanitizeWebp } from '@signalapp/libsignal-client/dist/WebpSanitizer.js';
 import { PreventDisplaySleepService } from './PreventDisplaySleepService.std.ts';
+import { ScheduledMessagesWakeService } from './ScheduledMessagesWakeService.std.ts';
 import {
   SystemTrayService,
   focusAndForceToTop,
@@ -193,6 +194,13 @@ const localeDirectionTestingOverride = config.has(
 
 const preventDisplaySleepService = new PreventDisplaySleepService(
   powerSaveBlocker
+);
+
+const scheduledMessagesWakeService = new ScheduledMessagesWakeService(
+  powerSaveBlocker,
+  () => {
+    getMainWindow()?.webContents.send('scheduled-messages:wake');
+  }
 );
 
 const challengeHandler = new ChallengeMainHandler(
@@ -1215,6 +1223,14 @@ ipc.handle('pdf:generate', async (_event, data) => {
 
 ipc.on('set-is-call-active', (_event, isCallActive) => {
   preventDisplaySleepService.setEnabled(isCallActive);
+});
+
+ipc.on('scheduled-messages:set-next-send-at', (_event, nextSendAt: unknown) => {
+  scheduledMessagesWakeService.setNextSendAt(
+    typeof nextSendAt === 'number' && Number.isFinite(nextSendAt)
+      ? nextSendAt
+      : null
+  );
 });
 
 ipc.on('convert-image', async (event, uuid, data) => {
