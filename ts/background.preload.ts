@@ -303,6 +303,7 @@ import {
 import { PhoneNumberDiscoverability } from './util/phoneNumberDiscoverability.std.ts';
 import { getProfileData } from './state/ducks/standaloneInstaller.preload.ts';
 import { pinReminderService } from './services/pinReminder.preload.ts';
+import { scheduledMessagesService } from './services/scheduledMessages.preload.ts';
 import { updateCapabilities } from './util/updateCapabilities.preload.ts';
 
 const { isNumber, throttle } = lodash;
@@ -2306,6 +2307,7 @@ async function startApp(): Promise<void> {
     drop(initializeDonationService());
     initMegaphoneCheckService();
     pinReminderService.init();
+    scheduledMessagesService.init();
     // delay unread reminders by some arbitrary amount to avoid reminding at startup
     Timers.setTimeout(() => initializeUnreadReminderService(), FIVE_MINUTES);
 
