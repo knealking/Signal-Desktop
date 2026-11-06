@@ -27,6 +27,7 @@ import type { Emoji } from '../axo/emoji.std.ts';
 import type { PartialRegistrationType } from './StandaloneRegistration.std.ts';
 import type { RegistrationQueueJobState } from '../jobs/registrationJobQueue.preload.ts';
 import type { AudioDevicePref } from './Calling.std.ts';
+import type { ScheduledMessagesType } from './ScheduledMessage.std.ts';
 
 export type AutoDownloadAttachmentType = {
   photos: boolean;
@@ -282,6 +283,8 @@ export type StorageAccessType = {
   pinReminders: boolean | undefined;
   pinReminderLastCompleted: number | undefined;
   pinReminderNextInterval: number | undefined;
+  // Messages composed locally and queued to be sent at a later time
+  scheduledMessages: ScheduledMessagesType | undefined;
   registrationLock: boolean | undefined;
   allowSealedSenderFromAnyone: boolean;
 
@@ -609,6 +612,7 @@ const STORAGE_KEYS_TO_REMOVE_AFTER_UNLINK = [
   'isSvrPinStored',
   'pinReminderLastCompleted',
   'pinReminderNextInterval',
+  'scheduledMessages',
   'backupKeyViewed',
   'payments',
   'call-system-notification',
