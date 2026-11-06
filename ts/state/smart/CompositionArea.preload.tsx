@@ -238,6 +238,8 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
     sendMultiMediaMessage,
     sendPoll,
     setComposerFocus,
+    scheduleMessage,
+    cancelScheduledMessage,
   } = useComposerActions();
   const {
     discardEditMessage,
@@ -271,6 +273,13 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
 
   AutoSubstituteAsciiEmojis.enable(itemStorage.get('autoConvertEmoji', true));
   const { accountEntropyPool } = items;
+
+  const allScheduledMessages = items.scheduledMessages;
+  const scheduledMessages = useMemo(() => {
+    return (allScheduledMessages ?? []).filter(
+      item => item.conversationId === id
+    );
+  }, [allScheduledMessages, id]);
 
   const textIncludesRecoveryKey = useCallback(
     (text: string) => {
@@ -435,6 +444,10 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
       sendEditedMessage={sendEditedMessage}
       sendMultiMediaMessage={sendMultiMediaMessage}
       sendPoll={sendPoll}
+      // Scheduled messages
+      scheduledMessages={scheduledMessages}
+      scheduleMessage={scheduleMessage}
+      cancelScheduledMessage={cancelScheduledMessage}
       scrollToMessage={scrollToMessage}
       setComposerFocus={setComposerFocus}
       setMessageToEdit={setMessageToEdit}

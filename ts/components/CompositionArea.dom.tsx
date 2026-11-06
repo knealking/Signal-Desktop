@@ -89,6 +89,9 @@ import type { ContactNameColorType } from '../types/ContactNameColor.std.ts';
 import type { Emoji } from '../axo/emoji.std.ts';
 import { AxoConfirmDialog } from '../axo/AxoConfirmDialog.dom.tsx';
 import type { StickerReferenceType } from '../types/Stickers.preload.ts';
+import type { ScheduledMessagesType } from '../types/ScheduledMessage.std.ts';
+import { ScheduleSendDialog } from './ScheduleSendDialog.dom.tsx';
+import { ScheduledMessagesList } from './ScheduledMessagesList.dom.tsx';
 
 export type OwnProps = Readonly<{
   acceptedMessageRequest: boolean | null;
@@ -180,6 +183,16 @@ export type OwnProps = Readonly<{
     }
   ) => unknown;
   sendPoll: (conversationId: string, poll: PollCreateType) => unknown;
+  scheduledMessages: ScheduledMessagesType;
+  scheduleMessage: (
+    conversationId: string,
+    options: {
+      message: string;
+      bodyRanges: DraftBodyRanges;
+      sendAt: number;
+    }
+  ) => unknown;
+  cancelScheduledMessage: (id: string) => unknown;
   quotedMessageId: string | null;
   quotedMessageProps: null | ReadonlyDeep<
     Omit<
@@ -283,6 +296,9 @@ export const CompositionArea = memo(function CompositionArea({
   sendEditedMessage,
   sendMultiMediaMessage,
   sendPoll,
+  scheduledMessages,
+  scheduleMessage,
+  cancelScheduledMessage,
   setComposerFocus,
   setMessageToEdit,
   setQuoteByMessageId,
@@ -382,6 +398,9 @@ export const CompositionArea = memo(function CompositionArea({
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [isShareContactDialogOpen, setIsShareContactDialogOpen] =
     useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  // When set, the next submit from the input schedules instead of sending
+  const pendingScheduleSendAtRef = useRef<number | null>(null);
   const inputApiRef = useRef<InputApi | null>(null);
   const fileInputRef = useRef<null | HTMLInputElement>(null);
   const photoVideoInputRef = useRef<null | HTMLInputElement>(null);
@@ -424,6 +443,21 @@ export const CompositionArea = memo(function CompositionArea({
         return false;
       }
 
+      const scheduledSendAt = pendingScheduleSendAtRef.current;
+      if (scheduledSendAt != null) {
+        pendingScheduleSendAtRef.current = null;
+        if (message.trim().length === 0) {
+          return false;
+        }
+        scheduleMessage(conversationId, {
+          message,
+          bodyRanges,
+          sendAt: scheduledSendAt,
+        });
+        setLarge(false);
+        return true;
+      }
+
       if (editedMessageId) {
         sendEditedMessage(conversationId, {
           bodyRanges,
@@ -454,10 +488,44 @@ export const CompositionArea = memo(function CompositionArea({
       isViewOnce,
       quotedMessageSentAt,
       quotedMessageAuthorAci,
+      scheduleMessage,
       sendEditedMessage,
       sendMultiMediaMessage,
       setLarge,
     ]
+  );
+
+  const canSchedule =
+    canSend &&
+    dirty &&
+    draftEditMessage == null &&
+    draftAttachments.length === 0 &&
+    quotedMessageId == null &&
+    !isViewOnce;
+
+  const handleOpenScheduleDialog = useCallback(() => {
+    setIsScheduleDialogOpen(true);
+  }, []);
+
+  const handleCloseScheduleDialog = useCallback(() => {
+    setIsScheduleDialogOpen(false);
+    inputApiRef.current?.focus();
+  }, []);
+
+  const handleScheduleSubmit = useCallback((sendAt: number) => {
+    setIsScheduleDialogOpen(false);
+    pendingScheduleSendAtRef.current = sendAt;
+    inputApiRef.current?.submit();
+    // If the input refused to submit, don't leave a pending schedule around
+    pendingScheduleSendAtRef.current = null;
+    inputApiRef.current?.focus();
+  }, []);
+
+  const handleCancelScheduledMessage = useCallback(
+    (id: string) => {
+      cancelScheduledMessage(id);
+    },
+    [cancelScheduledMessage]
   );
 
   const launchAttachmentPicker = useCallback((type?: 'media' | 'file') => {
@@ -933,6 +1001,20 @@ export const CompositionArea = memo(function CompositionArea({
       </div>
     );
 
+  const scheduleButtonFragment = canSchedule ? (
+    <div className="CompositionArea__button-cell">
+      <div className={actionSlotClassName}>
+        <AxoIconButton.Root
+          symbol="clock"
+          variant="implied-secondary"
+          size="md"
+          label={i18n('icu:CompositionArea__scheduleSend')}
+          onClick={handleOpenScheduleDialog}
+        />
+      </div>
+    </div>
+  ) : null;
+
   const sendButtonFragment = !draftEditMessage ? (
     <>
       <div className="CompositionArea__placeholder" />
@@ -1317,6 +1399,11 @@ export const CompositionArea = memo(function CompositionArea({
           'CompositionArea__row--column'
         )}
       >
+        <ScheduledMessagesList
+          i18n={i18n}
+          scheduledMessages={scheduledMessages}
+          onCancel={handleCancelScheduledMessage}
+        />
         {isViewOnceActive
           ? null
           : quotedMessageProps && (
@@ -1408,6 +1495,7 @@ export const CompositionArea = memo(function CompositionArea({
         )}
         {!isViewOnceActive && !large && (
           <>
+            {scheduleButtonFragment}
             {!dirty ? micButtonFragment : null}
             {editMessageFragment}
             {composerAddMenuButton}
@@ -1425,6 +1513,7 @@ export const CompositionArea = memo(function CompositionArea({
           {composerAddMenuButton}
           {!dirty ? micButtonFragment : null}
           {editMessageFragment}
+          {scheduleButtonFragment}
           {dirty || !shouldShowMicrophone ? sendButtonFragment : null}
         </div>
       ) : null}
@@ -1444,6 +1533,13 @@ export const CompositionArea = memo(function CompositionArea({
         acceptMediaOnly
         testId="attachfile-input-media"
       />
+      {isScheduleDialogOpen && (
+        <ScheduleSendDialog
+          i18n={i18n}
+          onSubmit={handleScheduleSubmit}
+          onClose={handleCloseScheduleDialog}
+        />
+      )}
       {isPollModalOpen && (
         <PollCreateModal
           i18n={i18n}
