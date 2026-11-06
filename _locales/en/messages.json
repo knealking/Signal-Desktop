@@ -5470,6 +5470,50 @@
     "messageformat": "All times in {timeZone}",
     "description": "Note below the date and time fields telling the user which time zone the times are in. {timeZone} is a time zone name, like 'Eastern Time'."
   },
+  "icu:CompositionArea__scheduleSend": {
+    "messageformat": "Schedule message",
+    "description": "Label and tooltip for the composer button that opens a dialog to schedule the current message to be sent later"
+  },
+  "icu:ScheduleSendDialog__title": {
+    "messageformat": "Schedule message",
+    "description": "Title of the dialog where the user picks a date and time to send the message they typed"
+  },
+  "icu:ScheduleSendDialog__dateLabel": {
+    "messageformat": "Date",
+    "description": "Accessibility label for the date field in the schedule message dialog"
+  },
+  "icu:ScheduleSendDialog__timeLabel": {
+    "messageformat": "Time",
+    "description": "Accessibility label for the time field in the schedule message dialog"
+  },
+  "icu:ScheduleSendDialog__timeZoneNote": {
+    "messageformat": "All times in {timeZone}",
+    "description": "Note in the schedule message dialog telling the user which time zone the times are in. {timeZone} is a time zone name, like 'Eastern Time'."
+  },
+  "icu:ScheduleSendDialog__willSendAt": {
+    "messageformat": "Will send {time}",
+    "description": "Shown in the schedule message dialog to confirm when the message will be sent. {time} is a formatted date and time like 'Today 3:45 PM' or 'Nov 6, 2026, 8:00 AM'."
+  },
+  "icu:ScheduleSendDialog__pastTime": {
+    "messageformat": "Pick a time in the future",
+    "description": "Shown in the schedule message dialog when the selected date and time is in the past"
+  },
+  "icu:ScheduleSendDialog__submit": {
+    "messageformat": "Schedule",
+    "description": "Button in the schedule message dialog that confirms scheduling the message"
+  },
+  "icu:ScheduledMessages__listLabel": {
+    "messageformat": "Scheduled messages",
+    "description": "Accessibility label for the list of messages scheduled to be sent later, shown above the composer"
+  },
+  "icu:ScheduledMessages__scheduledFor": {
+    "messageformat": "Scheduled for {time}",
+    "description": "Shown above a message that is scheduled to be sent later. {time} is a formatted date and time like 'Today 3:45 PM' or 'Nov 6, 2026, 8:00 AM'."
+  },
+  "icu:ScheduledMessages__cancel": {
+    "messageformat": "Cancel scheduled message",
+    "description": "Label and tooltip for the button that cancels a message scheduled to be sent later"
+  },
   "icu:muteExpirationLabelAlways": {
     "messageformat": "Muted always",
     "description": "Shown in the mute notifications submenu whenever a conversation has been muted"
